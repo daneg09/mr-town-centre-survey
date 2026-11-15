@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title></head>
+<body><p id="m" style="font:16px system-ui;margin:40px"></p>
+<script>
+(async () => {
+  const fail = () => { document.getElementById('m').textContent = 'This map is not available.'; };
+  try {
+    const k = location.hash.slice(1);
+    if (!k) return fail();
+    const bytes = Uint8Array.from(atob(k.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('raw', bytes, 'AES-GCM', false, ['decrypt']);
+    const buf = new Uint8Array(await (await fetch('app.enc', {cache: 'no-cache'})).arrayBuffer());
+    const plain = await crypto.subtle.decrypt({name: 'AES-GCM', iv: buf.slice(0, 12)}, key, buf.slice(12));
+    document.open(); document.write(new TextDecoder().decode(plain)); document.close();
+  } catch (e) { fail(); }
+})();
+</script></body></html>
